@@ -83,6 +83,6 @@ async function Connection(socket) {
 
 io.on("connection", Connection);
 
-httpServer.listen(3000, () => {
+httpServer.listen(process.env.PORT || 3000, () => {
   console.log("good over here");
 });
