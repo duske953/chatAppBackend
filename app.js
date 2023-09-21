@@ -27,7 +27,7 @@ const io = new Server(httpServer, {
     name:"io",
     secure:true,
     httpOnly:true,
-    sameSite:false,
+    sameSite:"none",
     path:"/"
     
   }
@@ -40,7 +40,7 @@ const sessionMiddleware = session({
   cookie:{
     secure:true,
     httpOnly:true,
-    sameSite:false,
+    sameSite:"none",
     path:"/"
   }
 });
