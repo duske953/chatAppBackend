@@ -24,16 +24,25 @@ const io = new Server(httpServer, {
     skipMiddlewares: true,
   },
   cookie:{
-    name:"io"
+    name:"io",
+    secure:true,
+    httpOnly:true,
+    sameSite:false,
+    path:"/"
+    
   }
 });
 
 const sessionMiddleware = session({
-  secret: "changeit",
-  resave: true,
-  saveUninitialized: true,
-  name:"eloho",
-  
+  secret: "owighowunuken",
+  resave: false,
+  saveUninitialized: false,
+  cookie:{
+    secure:true,
+    httpOnly:true,
+    sameSite:false,
+    path:"/"
+  }
 });
 
 io.engine.use(sessionMiddleware);
