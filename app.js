@@ -24,13 +24,17 @@ const io = new Server(httpServer, {
     maxDisconnectionDuration: 3 * 60 * 1000,
     skipMiddlewares: true,
   },
-  cookie: true,
+  cookie:{
+    name:"io"
+  }
 });
 
 const sessionMiddleware = session({
   secret: "changeit",
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
+  name:"eloho",
+  
 });
 
 io.engine.use(sessionMiddleware);
@@ -86,3 +90,7 @@ io.on("connection", Connection);
 httpServer.listen(process.env.PORT || 3000, () => {
   console.log("good over here");
 });
+
+
+
+
