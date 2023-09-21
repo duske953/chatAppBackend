@@ -4,7 +4,6 @@ import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import session from "express-session";
 import { faker } from "@faker-js/faker";
-import "dotenv"
 import {
   broadCastEvent,
   sendMessage,
