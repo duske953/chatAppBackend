@@ -33,6 +33,8 @@ const io = new Server(httpServer, {
   }
 });
 
+app.set("trust proxy",1)
+
 const sessionMiddleware = session({
   secret: "owighowunuken",
   resave: false,
