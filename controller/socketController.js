@@ -27,7 +27,7 @@ export async function broadCastEvent(io, ev, socket) {
 
   const foundClient = sockets
     .filter(
-      (ele, _) => ele.data.userDetails.id !== socket.data.userDetails.id
+      (ele, _) => ele.handshake.auth.token !== socket.handshake.auth.token
     )
     .map((ele, _) => ele.data.userDetails)
     .find((ele, _) => ele.id === socket.data.userDetails.id);
