@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import session from "express-session";
 import { faker } from "@faker-js/faker";
+import cors from "cors"
 import {
   broadCastEvent,
   sendMessage,
@@ -16,6 +17,11 @@ import {
 } from "./controller/socketController.js";
 const app = express();
 
+
+app.use(cors({
+  origin:"http://localhost:5173",
+  credentials:true,
+}))
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: "http://localhost:5173", credentials: true },
@@ -23,13 +29,13 @@ const io = new Server(httpServer, {
     maxDisconnectionDuration: 3 * 60 * 1000,
     skipMiddlewares: true,
   },
+  cookie:true,
   cookie:{
     name:"io",
     secure:true,
     httpOnly:true,
     sameSite:"none",
     path:"/"
-    
   }
 });
 
@@ -39,6 +45,7 @@ const sessionMiddleware = session({
   secret: "owighowunuken",
   resave: false,
   saveUninitialized: false,
+  proxy:true,
   cookie:{
     secure:true,
     httpOnly:true,
