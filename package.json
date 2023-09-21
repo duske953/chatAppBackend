@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "engines": {
-    "node": "14.15.3"
+    "node": "16.17.0"
   },
   "dependencies": {
     "@faker-js/faker": "^8.0.2",
