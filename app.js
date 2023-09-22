@@ -4,7 +4,6 @@ import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 import session from "express-session";
 import { faker } from "@faker-js/faker";
-import cors from "cors"
 import {
   broadCastEvent,
   sendMessage,
@@ -13,44 +12,26 @@ import {
   getStoredMessages,
   checkIfUserIsValid,
   isTyping,
-  maxAllowedUsers
 } from "./controller/socketController.js";
 const app = express();
 
-
-app.use(cors({
-  origin:"http://localhost:5173",
-  credentials:true,
-}))
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: { origin: "http://localhost:5173", credentials: true },
+  cors: { origin: "https://anonymo.vercel.app/",credentials:true},
   connectionStateRecovery: {
-    maxDisconnectionDuration: 3 * 60 * 1000,
     skipMiddlewares: true,
   },
-  cookie:true,
-  cookie:{
-    name:"io",
-    secure:true,
-    httpOnly:true,
-    sameSite:"none",
-    path:"/"
-  }
+  cookie: true,
 });
 
-app.set("trust proxy",1)
-
 const sessionMiddleware = session({
-  secret: "owighowunuken",
+  secret: "changeit",
   resave: false,
   saveUninitialized: false,
-  proxy:true,
   cookie:{
     secure:true,
-    httpOnly:true,
     sameSite:"none",
-    path:"/"
+    httpOnly:true
   }
 });
 
@@ -78,14 +59,12 @@ io.engine.use((req, res, next) => {
 
 async function Connection(socket) {
   const req = socket.request;
-
   broadCastEvent(io, "active:users", socket);
   await checkIfUserIsValid(socket, io);
   sendMessage(socket, io);
   receivedMessage(socket, io);
   getStoredMessages(socket);
   isTyping(socket, io);
-  maxAllowedUsers(socket,io)
   socket.on("getStoredMessages", (msg) => {
     socket.emit("sendMessages", req.session.storedMessages);
   });
@@ -104,10 +83,6 @@ async function Connection(socket) {
 
 io.on("connection", Connection);
 
-httpServer.listen(process.env.PORT || 3000, () => {
+httpServer.listen(3000, () => {
   console.log("good over here");
 });
-
-
-
-

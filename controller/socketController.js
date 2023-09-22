@@ -1,3 +1,5 @@
+let disconnectedUser;
+
 function storeUserData(socket) {
   let req = socket.request;
   socket.data.userDetails = {
@@ -142,10 +144,3 @@ export async function disconnect(socket, io) {
     }, 70000);
   });
 }
-
-export function maxAllowedUsers(socket,io){
-  if(io.engine.clientsCount > 100){
-    socket.disconnect();
-  }
-}
-
