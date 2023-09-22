@@ -24,10 +24,13 @@ const io = new Server(httpServer, {
   cookie: true,
 });
 
+
+app.set("trust proxy",1)
 const sessionMiddleware = session({
   secret: "changeit",
   resave: false,
   saveUninitialized: false,
+  proxy:true,
   cookie:{
     secure:true,
     sameSite:"none",
