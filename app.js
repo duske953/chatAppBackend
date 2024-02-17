@@ -1,9 +1,11 @@
-import express from "express";
-import { createServer } from "http";
-import { Server } from "socket.io";
-import { v4 as uuidv4 } from "uuid";
-import session from "express-session";
-import { faker } from "@faker-js/faker";
+/* eslint-disable no-undef */
+import 'dotenv/config';
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { v4 as uuidv4 } from 'uuid';
+import session from 'express-session';
+import { faker } from '@faker-js/faker';
 import {
   broadCastEvent,
   sendMessage,
@@ -12,30 +14,39 @@ import {
   getStoredMessages,
   checkIfUserIsValid,
   isTyping,
-} from "./controller/socketController.js";
+  getMessageAttr,
+} from './controller/socketController.js';
 const app = express();
-
+console.log(process.env.NODE_ENV);
 const httpServer = createServer(app);
+
 const io = new Server(httpServer, {
-  cors: { origin: "https://anonymo.vercel.app",credentials:true},
+  cors: {
+    origin:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:5173'
+        : 'https://anonymo.vercel.app',
+    credentials: true,
+  },
+
   connectionStateRecovery: {
+    maxDisconnectionDuration: 3 * 60 * 1000,
     skipMiddlewares: true,
   },
   cookie: true,
 });
 
-
-app.set("trust proxy",1)
+app.set('trust proxy', 1);
 const sessionMiddleware = session({
-  secret: "changeit",
-  resave: false,
+  secret: process.env.SECRET,
+  resave: true,
   saveUninitialized: false,
-  proxy:true,
-  cookie:{
-    secure:true,
-    sameSite:"none",
-    httpOnly:true
-  }
+  proxy: true,
+  cookie: {
+    sameSite: process.env.NODE_ENV === 'development' ? 'lax' : 'none',
+    secure: process.env.NODE_ENV === 'development' ? false : true,
+    httpOnly: true,
+  },
 });
 
 io.engine.use(sessionMiddleware);
@@ -62,17 +73,15 @@ io.engine.use((req, res, next) => {
 
 async function Connection(socket) {
   const req = socket.request;
-  broadCastEvent(io, "active:users", socket);
+  broadCastEvent(io, 'active:users', socket);
   await checkIfUserIsValid(socket, io);
   sendMessage(socket, io);
   receivedMessage(socket, io);
-  getStoredMessages(socket);
+  getMessageAttr(socket);
   isTyping(socket, io);
-  socket.on("getStoredMessages", (msg) => {
-    socket.emit("sendMessages", req.session.storedMessages);
-  });
+  getStoredMessages(socket, io);
 
-  socket.on("messageData", (message) => {
+  socket.on('messageData', (message) => {
     req.session.reload(async (err) => {
       if (err) {
         return socket.disconnect();
@@ -84,8 +93,8 @@ async function Connection(socket) {
   disconnect(socket, io);
 }
 
-io.on("connection", Connection);
+io.on('connection', Connection);
 
 httpServer.listen(3000, () => {
-  console.log("good over here");
+  console.log('good over here');
 });

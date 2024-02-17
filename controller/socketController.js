@@ -1,5 +1,3 @@
-let disconnectedUser;
-
 function storeUserData(socket) {
   let req = socket.request;
   socket.data.userDetails = {
@@ -7,14 +5,14 @@ function storeUserData(socket) {
     refId: socket.handshake.auth.token,
   };
   socket.data.savedMessages = req.session.savedMessages;
-  socket.broadcast.emit("user:disconnected", {
+  socket.broadcast.emit('user:disconnected', {
     user: socket.data.userDetails,
     active: true,
   });
 }
 
 function getSocketsData(sockets) {
-  return sockets.map((ele, i) => {
+  return sockets.map((ele) => {
     return {
       ...ele.data.userDetails,
       socketId: ele.id,
@@ -28,14 +26,11 @@ export async function broadCastEvent(io, ev, socket) {
   sockets = await io.fetchSockets();
 
   const foundClient = sockets
-    .filter(
-      (ele, _) => ele.handshake.auth.token !== socket.handshake.auth.token
-    )
-    .map((ele, _) => ele.data.userDetails)
-    .find((ele, _) => ele.id === socket.data.userDetails.id);
-
+    .filter((ele) => ele.handshake.auth.token !== socket.handshake.auth.token)
+    .map((ele) => ele.data.userDetails)
+    .find((ele) => ele.id === socket.data.userDetails.id);
   if (foundClient) {
-    socket.emit("userAlreadyConnected", foundClient);
+    socket.emit('userAlreadyConnected', foundClient);
     socket.disconnect();
     sockets = await io.fetchSockets();
     return;
@@ -44,25 +39,32 @@ export async function broadCastEvent(io, ev, socket) {
     //   foundClient,
     // });
   }
-  return io.emit("active:users", { users: getSocketsData(sockets) });
+  return io.emit('active:users', { users: getSocketsData(sockets) });
 }
 
-export function getStoredMessages(socket) {
+export function getStoredMessages(socket, io) {
   let req = socket.request;
-  socket.emit("sendAllMessages", {
+  return socket.emit('sendAllMessages', {
     messageAttr: req.session.messages,
     messageData: req.session.storedMessages,
     currentUser: socket.data.userDetails,
   });
 }
 
+export function getMessageAttr(socket) {
+  let req = socket.request;
+  socket.emit('sendMessageAttr', {
+    messageAttr: req.session.messages,
+  });
+}
+
 export function sendMessage(socket, io) {
   let req = socket.request;
-  socket.on("send:message", async (msg) => {
+  socket.on('send:message', async (msg) => {
     req.session.reload(async (err) => {
       const sockets = await io.fetchSockets();
       const receiver = sockets.find(
-        (ele, i) => ele.data.userDetails.id === msg.receiverId
+        (ele) => ele.data.userDetails.id === msg.receiverId
       );
       if (err) {
         console.log(err);
@@ -71,8 +73,8 @@ export function sendMessage(socket, io) {
       if (!receiver) return;
       req.session.storedMessages.push(msg);
       req.session.save();
-      io.to(receiver.id).emit("send:message", msg);
-      io.to(receiver.id).emit("messageAttr", {
+      io.to(receiver.id).emit('send:message', msg);
+      io.to(receiver.id).emit('messageAttr', {
         messages: { ...msg, read: false },
         sid: msg.senderId,
       });
@@ -80,10 +82,9 @@ export function sendMessage(socket, io) {
   });
 }
 
-export async function receivedMessage(socket, io) {
-  const sockets = await io.fetchSockets();
+export async function receivedMessage(socket) {
   let req = socket.request;
-  socket.on("receivedMessageAttr", ({ getMessage }) => {
+  socket.on('receivedMessageAttr', ({ getMessage }) => {
     req.session.reload(async (err) => {
       if (err) {
         socket.disconnect();
@@ -97,15 +98,15 @@ export async function receivedMessage(socket, io) {
 
 export async function checkIfUserIsValid(socket, io) {
   let req = socket.request;
-  socket.on("isUserStillValid", async (id) => {
+  socket.on('isUserStillValid', async (id) => {
     const sockets = await io.fetchSockets();
     const foundUser = sockets
-      .filter((ele, i) => ele.data.userDetails.id === id)
-      .map((ele, i) => ele.data.userDetails);
+      .filter((ele) => ele.data.userDetails.id === id)
+      .map((ele) => ele.data.userDetails);
     if (foundUser.length === 0) {
-      return socket.emit("response:userIsStillValid", { foundUser: "no-user" });
+      return socket.emit('response:userIsStillValid', { foundUser: 'no-user' });
     }
-    return socket.emit("response:userIsStillValid", {
+    return socket.emit('response:userIsStillValid', {
       foundUser,
       messages: req.session.storedMessages,
     });
@@ -113,29 +114,29 @@ export async function checkIfUserIsValid(socket, io) {
 }
 
 export async function isTyping(socket, io) {
-  socket.on("userIsTyping", async ({ sid, rid, typing }) => {
+  socket.on('userIsTyping', async ({ sid, rid, typing }) => {
     const sockets = await io.fetchSockets();
     const receiver = sockets.find((ele, i) => ele.data.userDetails.id === rid);
     if (!receiver) return;
-    io.to(receiver.id).emit("userIsTyping", { typing, sid });
+    io.to(receiver.id).emit('userIsTyping', { typing, sid });
   });
 }
 
 export async function disconnect(socket, io) {
   let sockets = await io.fetchSockets();
   let isUserStillConnected;
-  socket.on("disconnect", async (reason) => {
-    socket.broadcast.emit("user:disconnected", {
+  socket.on('disconnect', async () => {
+    socket.broadcast.emit('user:disconnected', {
       user: socket.data.userDetails,
       active: false,
     });
     setTimeout(async () => {
       sockets = await io.fetchSockets();
       isUserStillConnected = sockets.find(
-        (ele, i) => ele.data.userDetails.id === socket.data.userDetails.id
+        (ele) => ele.data.userDetails.id === socket.data.userDetails.id
       );
       if (!isUserStillConnected) {
-        socket.broadcast.emit("user:disconnected", {
+        socket.broadcast.emit('user:disconnected', {
           user: socket.data.userDetails,
           active: false,
           disconnected: true,
