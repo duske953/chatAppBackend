@@ -44,10 +44,12 @@ export async function broadCastEvent(io, ev, socket) {
 
 export function getStoredMessages(socket, io) {
   let req = socket.request;
-  return socket.emit('sendAllMessages', {
-    messageAttr: req.session.messages,
-    messageData: req.session.storedMessages,
-    currentUser: socket.data.userDetails,
+  socket.on('fetchAllMessages', () => {
+    return socket.emit('sendAllMessages', {
+      messageAttr: req.session.messages,
+      messageData: req.session.storedMessages,
+      currentUser: socket.data.userDetails,
+    });
   });
 }
 

@@ -17,7 +17,6 @@ import {
   getMessageAttr,
 } from './controller/socketController.js';
 const app = express();
-console.log(process.env.NODE_ENV);
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
@@ -25,7 +24,7 @@ const io = new Server(httpServer, {
     origin:
       process.env.NODE_ENV === 'development'
         ? 'http://localhost:5173'
-        : 'https://anonymo.vercel.app',
+        : process.env.FRONTEND_URL,
     credentials: true,
   },
 
@@ -95,6 +94,6 @@ async function Connection(socket) {
 
 io.on('connection', Connection);
 
-httpServer.listen(process.env.port || 8000, () => {
+httpServer.listen(process.env.PORT || 8000, () => {
   console.log('good over here');
 });
