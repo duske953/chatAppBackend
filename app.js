@@ -14,7 +14,7 @@ import {
   getStoredMessages,
   checkIfUserIsValid,
   isTyping,
-  getMessageAttr,
+  receivedMessageAttr,
 } from './controller/socketController.js';
 const app = express();
 const httpServer = createServer(app);
@@ -32,9 +32,7 @@ const io = new Server(httpServer, {
     maxDisconnectionDuration: 3 * 60 * 1000,
     skipMiddlewares: true,
   },
-  cookie: true,
 });
-
 app.set('trust proxy', 1);
 const sessionMiddleware = session({
   secret: process.env.SECRET,
@@ -60,10 +58,11 @@ io.engine.use((req, res, next) => {
       image: faker.image.url(),
       active: true,
       id: uuidv4(),
-      sort: false,
+      msgSent: false,
     };
-    req.session.storedMessages = [];
-    req.session.messages = [];
+    req.session.sentMessages = [];
+    req.session.receivedMessages = [];
+    req.session.messageAttr = [];
     req.session.savedMessages = [];
     return next();
   }
@@ -71,12 +70,15 @@ io.engine.use((req, res, next) => {
 });
 
 async function Connection(socket) {
+  // if (io.engine.clientsCount > 2) {
+  //   socket.disconnect();
+  // }
   const req = socket.request;
   broadCastEvent(io, 'active:users', socket);
   await checkIfUserIsValid(socket, io);
   sendMessage(socket, io);
   receivedMessage(socket, io);
-  getMessageAttr(socket);
+  receivedMessageAttr(socket);
   isTyping(socket, io);
   getStoredMessages(socket, io);
 
@@ -89,6 +91,19 @@ async function Connection(socket) {
       req.session.save();
     });
   });
+
+  socket.on('seen:message', (msg) => {
+    req.session.reload(async (err) => {
+      if (err) return socket.disconnect();
+      req.session.messageAttr.forEach((ele) => {
+        if (ele.senderId === msg.id) {
+          ele.new = msg.new;
+        }
+        req.session.save();
+      });
+    });
+  });
+
   disconnect(socket, io);
 }
 

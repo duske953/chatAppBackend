@@ -46,8 +46,9 @@ export function getStoredMessages(socket, io) {
   let req = socket.request;
   socket.on('fetchAllMessages', () => {
     return socket.emit('sendAllMessages', {
-      messageAttr: req.session.messages,
-      messageData: req.session.storedMessages,
+      sentMessages: req.session.sentMessages,
+      receivedMessages: req.session.receivedMessages,
+      messageAttr: req.session.messageAttr,
       currentUser: socket.data.userDetails,
     });
   });
@@ -69,33 +70,73 @@ export function sendMessage(socket, io) {
         (ele) => ele.data.userDetails.id === msg.receiverId
       );
       if (err) {
-        console.log(err);
         return socket.disconnect();
       }
       if (!receiver) return;
-      req.session.storedMessages.push(msg);
-      req.session.save();
-      io.to(receiver.id).emit('send:message', msg);
-      io.to(receiver.id).emit('messageAttr', {
-        messages: { ...msg, read: false },
-        sid: msg.senderId,
+      req.session.sentMessages.push({
+        ...msg,
+        read: true,
+        position: 'left',
       });
+      io.to(receiver.id).emit('received:message', {
+        ...msg,
+        read: false,
+        position: 'right',
+        time: new Date().toLocaleString(),
+      });
+      socket.emit('sent:message', {
+        msg: req.session.sentMessages,
+        sent: true,
+      });
+      req.session.save();
+      // io.to(receiver.id).emit('messageAttr', {
+      //   messages: { ...msg, read: false },
+      //   sid: msg.senderId,
+      // });
+    });
+  });
+}
+
+export async function receivedMessageAttr(socket) {
+  let req = socket.request;
+  socket.on('received:messageAttr', (msg) => {
+    req.session.reload(async (err) => {
+      if (err) return socket.disconnect();
+      req.session.messageAttr.push(msg);
+      req.session.save();
     });
   });
 }
 
 export async function receivedMessage(socket) {
   let req = socket.request;
-  socket.on('receivedMessageAttr', ({ getMessage }) => {
+  socket.on('received:message', ({ msg, messageAttr }) => {
     req.session.reload(async (err) => {
-      if (err) {
-        socket.disconnect();
-      }
-      if (!getMessage || getMessage.length === 0) return;
-      req.session.messages = getMessage;
+      if (err) return socket.disconnect();
+      req.session.receivedMessages.push({ ...msg, new: true });
+      req.session.messageAttr.push(messageAttr);
       req.session.save();
     });
   });
+
+  // socket.on('received:messageAttr', (msg) => {
+  //   req.session.reload(async (err) => {
+  //     if (err) return socket.disconnect();
+  //     req.session.messageAttr.push(msg);
+  //     req.session.save();
+  //   });
+  // });
+  // socket.on('receivedMessageAttr', ({ getMessage }) => {
+  //   req.session.reload(async (err) => {
+  //     if (err) {
+  //       console.log(err);
+  //       socket.disconnect();
+  //     }
+  //     if (!getMessage || getMessage.length === 0) return;
+  //     req.session.messages = getMessage;
+  //     req.session.save();
+  //   });
+  // });
 }
 
 export async function checkIfUserIsValid(socket, io) {
@@ -119,7 +160,9 @@ export async function isTyping(socket, io) {
   socket.on('userIsTyping', async ({ sid, rid, typing }) => {
     const sockets = await io.fetchSockets();
     const receiver = sockets.find((ele, i) => ele.data.userDetails.id === rid);
-    if (!receiver) return;
+    if (!receiver) {
+      return;
+    }
     io.to(receiver.id).emit('userIsTyping', { typing, sid });
   });
 }
