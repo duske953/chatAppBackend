@@ -146,11 +146,13 @@ export async function checkIfUserIsValid(socket, io) {
       .filter((ele) => ele.data.userDetails.id === id)
       .map((ele) => ele.data.userDetails);
     if (foundUser.length === 0) {
-      return socket.emit('response:userIsStillValid', { foundUser: 'no-user' });
+      return socket.emit('response:userIsStillValid', {
+        foundUser: 'no-user',
+        id,
+      });
     }
     return socket.emit('response:userIsStillValid', {
       foundUser,
-      messages: req.session.storedMessages,
     });
   });
 }
