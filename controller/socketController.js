@@ -82,7 +82,6 @@ export function sendMessage(socket, io) {
         ...msg,
         read: false,
         position: 'right',
-        time: new Date().toLocaleString(),
       });
       socket.emit('sent:message', {
         msg: req.session.sentMessages,
