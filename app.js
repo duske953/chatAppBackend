@@ -27,7 +27,6 @@ const io = new Server(httpServer, {
         : process.env.FRONTEND_URL,
     credentials: true,
   },
-
   connectionStateRecovery: {
     maxDisconnectionDuration: 3 * 60 * 1000,
     skipMiddlewares: true,
@@ -70,9 +69,13 @@ io.engine.use((req, res, next) => {
 });
 
 async function Connection(socket) {
-  // if (io.engine.clientsCount > 2) {
-  //   socket.disconnect();
-  // }
+  socket.use(([event, ...args], next) => {
+    if (io.engine.clientsCount >= 50) {
+      socket.emit('server:full', { data: socket.data });
+      return socket.disconnect();
+    }
+    next();
+  });
   const req = socket.request;
   broadCastEvent(io, 'active:users', socket);
   await checkIfUserIsValid(socket, io);
@@ -81,16 +84,6 @@ async function Connection(socket) {
   receivedMessageAttr(socket);
   isTyping(socket, io);
   getStoredMessages(socket, io);
-
-  socket.on('messageData', (message) => {
-    req.session.reload(async (err) => {
-      if (err) {
-        return socket.disconnect();
-      }
-      req.session.storedMessages.push(message);
-      req.session.save();
-    });
-  });
 
   socket.on('seen:message', (msg) => {
     req.session.reload(async (err) => {
