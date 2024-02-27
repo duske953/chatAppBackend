@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "author":"Eloho Kennedy",
-  "description": "Server for chatapplication handling socket logic",
+  "description": "Server handling socket logic of the chat application",
   "main": "app.js",
   "type": "module",
   "scripts": {
