@@ -84,6 +84,7 @@ export function sendMessage(socket, io) {
         ...msg,
         read: false,
         position: 'right',
+        time:new Date().toISOString()
       });
       socket.emit('sent:message', {
         msg: req.session.sentMessages,
@@ -114,7 +115,7 @@ export async function receivedMessage(socket) {
   socket.on('received:message', ({ msg, messageAttr }) => {
     req.session.reload(async (err) => {
       if (err) return socket.disconnect();
-      req.session.receivedMessages.push({ ...msg, new: true,time:new Date().toISOString() });
+      req.session.receivedMessages.push({ ...msg, new: true, time:new Date().toISOString() });
       req.session.messageAttr.push(messageAttr);
       req.session.save();
     });
