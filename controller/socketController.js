@@ -1,3 +1,4 @@
+import moment from "moment"
 function storeUserData(socket) {
   let req = socket.request;
   socket.data.userDetails = {
@@ -77,6 +78,7 @@ export function sendMessage(socket, io) {
         ...msg,
         read: true,
         position: 'left',
+        time:moment().format()
       });
       io.to(receiver.id).emit('received:message', {
         ...msg,
@@ -112,7 +114,7 @@ export async function receivedMessage(socket) {
   socket.on('received:message', ({ msg, messageAttr }) => {
     req.session.reload(async (err) => {
       if (err) return socket.disconnect();
-      req.session.receivedMessages.push({ ...msg, new: true });
+      req.session.receivedMessages.push({ ...msg, new: true,time:moment().format() });
       req.session.messageAttr.push(messageAttr);
       req.session.save();
     });
